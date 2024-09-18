@@ -1,6 +1,6 @@
 'use client'
-import { Assistant } from '@langchain/langgraph-sdk';
 // components/Chat.tsx
+import { Assistant, Client, Thread } from '@langchain/langgraph-sdk';
 import { Send } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
@@ -9,10 +9,13 @@ interface Message {
   sender: 'user' | 'ai';
 }
 
-export default function Chat({...props}) {
-    const client = props.client;
-    const assistants = props.assistants;
-    const thread = props.thread;
+type props = {
+  client: Client | null
+  assistants: Assistant[]
+  thread: Thread | null
+}
+
+export default function Chat({client,thread,assistants}:props) {
     const [messages, setMessages] = useState<Message[]>([]);
     const [input, setInput] = useState<string>('');
     const inputRef = useRef<HTMLInputElement | null>(null);
@@ -43,7 +46,7 @@ export default function Chat({...props}) {
         const assistant = assistants.find((a:Assistant) => a.graph_id=="test")
         const streamResponse = client.runs.stream(
           thread!["thread_id"],
-          assistant["assistant_id"],
+          assistant!["assistant_id"],
           { "input": { messages:[ {"role":"user","content":userInput}] } }
         );
         for await (const chunk of streamResponse) {

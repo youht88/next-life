@@ -10,7 +10,6 @@ const uri = "http://youht.cc:18123"; // 从环境变量中获取 MongoDB URI
 const options = {};
 
 console.log("HERE!!!!!!!!")
-
 export default function Home(){
     const [scrollToBottom, setScrollToBottom] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement | null>(null);
