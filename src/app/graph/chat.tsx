@@ -3,6 +3,7 @@
 import { Assistant, Client, Thread } from '@langchain/langgraph-sdk';
 import { Send } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
+import AIMessage from './ai_message';
 
 interface Message {
   text: string;
@@ -11,11 +12,12 @@ interface Message {
 
 type props = {
   client: Client | null
-  assistants: Assistant[]
+  assistant: Assistant | null
   thread: Thread | null
 }
 
-export default function Chat({client,thread,assistants}:props) {
+export default function Chat({client,thread,assistant}:props) {
+    const [theme, setTheme] = useState('dark')
     const [messages, setMessages] = useState<Message[]>([]);
     const [input, setInput] = useState<string>('');
     const inputRef = useRef<HTMLInputElement | null>(null);
@@ -30,8 +32,7 @@ export default function Chat({client,thread,assistants}:props) {
       setInput('');
 
       // 模拟 AI 响应
-      const aiResponse = await getAIResponse(input);
-      const aiMessage: Message = { text: aiResponse, sender: 'ai' };
+      const aiMessage: Message = { text: "...", sender: 'ai' };
       setMessages((prev) => [...prev, aiMessage]);
 
       // 将焦点重新设置到输入框
@@ -40,28 +41,6 @@ export default function Chat({client,thread,assistants}:props) {
       }
     };
   
-    const getAIResponse = async (userInput: string): Promise<string> => {
-      let aimsg = ""
-      if (client) {
-        const assistant = assistants.find((a:Assistant) => a.graph_id=="test")
-        const streamResponse = client.runs.stream(
-          thread!["thread_id"],
-          assistant!["assistant_id"],
-          { "input": { messages:[ {"role":"user","content":userInput}] } }
-        );
-        for await (const chunk of streamResponse) {
-          console.log(chunk);
-          if (chunk.data && chunk.event !== "metadata") {
-            const messages = chunk.data["messages"]
-            const message = messages[messages.length - 1]
-            if (message.type=='ai'){
-                aimsg += message.content + "|"
-            }
-          }
-        }
-      }
-      return aimsg
-    };
     // 处理键盘事件
     const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
       // 检查是否在中文输入法状态
@@ -78,6 +57,10 @@ export default function Chat({client,thread,assistants}:props) {
         messagesEndRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
       }
     }, [messages]); // 监听 messages 的变化
+    
+    useEffect(() => {
+        console.log("chat theme:",localStorage.getItem("theme"))
+    }, []);
 
     return (
       <div className="flex justify-center items-center w-full h-full">
@@ -86,7 +69,7 @@ export default function Chat({client,thread,assistants}:props) {
             {messages.map((msg, index) => (
               <div key={index} className={`mb-2 ${msg.sender === 'user' ? 'text-right mr-2' : 'text-left'}`}>
                 <span className={`inline-block p-2 rounded-lg ${msg.sender === 'user' ? 'bg-blue-500 text-white' : 'bg-gray-300 text-black'}`}>
-                  {msg.text}
+                  {msg.sender==='user' ? msg.text : <AIMessage client={client} thread={thread} assistant={assistant} userInput={input} />}
                 </span>
               </div>
             ))}
@@ -95,7 +78,7 @@ export default function Chat({client,thread,assistants}:props) {
           <div className="flex">
             <input
               type="text"
-              className="flex-1 p-2 border rounded-l-lg"
+              className="flex-1 p-2 border rounded-l-lg dark:text-white"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="输入消息..."
@@ -104,7 +87,7 @@ export default function Chat({client,thread,assistants}:props) {
             />
             <button
               onClick={handleSend}
-              className="p-2 bg-blue-500 text-white rounded-r-lg"
+              className="p-2 bg-blue-500 text-white rounded-r-lg dark:text-black"
             >
               <Send className="w-5 h-5" />
             </button>
