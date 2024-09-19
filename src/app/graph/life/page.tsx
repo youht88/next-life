@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
 import { Assistant, Client, Thread } from '@langchain/langgraph-sdk';
 import Chat from '../chat';
 
-const uri = "http://youht.cc:18123"; // 从环境变量中获取 MongoDB URI
+const uri = "http://192.168.23.57:8123"; // 从环境变量中获取 MongoDB URI
 const options = {};
 
 console.log("HERE!!!!!!!!")

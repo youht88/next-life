@@ -7,7 +7,7 @@ import AIMessage from './ai_message';
 
 interface Message {
   text: string;
-  sender: 'user' | 'ai';
+  sender: 'user' | 'ai' | 'system';
 }
 
 type props = {
@@ -22,15 +22,17 @@ export default function Chat({client,thread,assistant}:props) {
     const [input, setInput] = useState<string>('');
     const inputRef = useRef<HTMLInputElement | null>(null);
     const messagesEndRef = useRef<HTMLDivElement | null>(null);
+    const [userInput,setUserInput] = useState<string>('');
     const handleSend = async () => {
       if (!input.trim()) return;
+      setUserInput(input.trim())
       // 添加用户消息
       const userMessage: Message = { text: input, sender: 'user' };
       setMessages((prev) => [...prev, userMessage]);
-
+      
       // 清空输入框
       setInput('');
-
+      
       // 模拟 AI 响应
       const aiMessage: Message = { text: "...", sender: 'ai' };
       setMessages((prev) => [...prev, aiMessage]);
@@ -44,11 +46,9 @@ export default function Chat({client,thread,assistant}:props) {
     // 处理键盘事件
     const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
       // 检查是否在中文输入法状态
-      if (event.nativeEvent.isComposing || event.key === 'Enter' && !event.nativeEvent.isComposing) {
-        if (event.key === 'Enter') {
-          event.preventDefault(); // 防止换行
-          handleSend();
-        }
+      if (event.key === 'Enter') {
+        event.preventDefault(); // 防止换行
+        handleSend();
       }
     };
     // 自动滚动到最底部
@@ -69,11 +69,11 @@ export default function Chat({client,thread,assistant}:props) {
             {messages.map((msg, index) => (
               <div key={index} className={`mb-2 ${msg.sender === 'user' ? 'text-right mr-2' : 'text-left'}`}>
                 <span className={`inline-block p-2 rounded-lg ${msg.sender === 'user' ? 'bg-blue-500 text-white' : 'bg-gray-300 text-black'}`}>
-                  {msg.sender==='user' ? msg.text : <AIMessage client={client} thread={thread} assistant={assistant} userInput={input} />}
+                  {msg.sender==='user' ? msg.text : <AIMessage client={client} thread={thread} assistant={assistant} userInput={userInput} />}
                 </span>
               </div>
             ))}
-            <div ref={messagesEndRef} />
+            <div ref={messagesEndRef} className="h-10"/>
           </div>
           <div className="flex">
             <input
