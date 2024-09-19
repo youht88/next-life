@@ -1,6 +1,9 @@
 'use client'
 import { Assistant, Client, Thread } from '@langchain/langgraph-sdk';
-import { useEffect, useState } from "react";
+import { ComponentPropsWithoutRef, useEffect, useState } from "react";
+import ReactMarkdown from 'react-markdown';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { dark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
 type props = {
   client: Client | null
@@ -117,8 +120,34 @@ export default function AIMessage({ client, thread, assistant, userInput }: prop
     <div className="p-1 bg-green-100 text-orange-400">
       <div className="flex flex-col gap-1">
         <div className="text-purple-300"> {tools} </div>
-        <h2>{nodes.join('->')}</h2>
-        {text}
+        <div className="text-green-600">{nodes.join('->')}</div>
+        <ReactMarkdown
+          components={{
+            code({inline, className, children, ...props}: {
+              inline?: boolean;
+              className?: string;
+              children: React.ReactNode;
+            } & ComponentPropsWithoutRef<'code'>) {
+              const match = /language-(\w+)/.exec(className || '')
+              return !inline && match ? (
+                <SyntaxHighlighter
+                  {...props}
+                  style={dark}
+                  language={match[1]}
+                  PreTag="div"
+                >
+                  {String(children).replace(/\n$/, '')}
+                </SyntaxHighlighter>
+              ) : (
+                <code {...props} className={className}>
+                  {children}
+                </code>
+              )
+            }
+          }}
+        >
+          {text}
+        </ReactMarkdown>
       </div>
     </div>
   </>)
