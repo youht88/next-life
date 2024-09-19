@@ -1,9 +1,7 @@
 'use client'
+import { MarkdownWidget } from '@/components/alt/markdown';
 import { Assistant, Client, Thread } from '@langchain/langgraph-sdk';
-import { ComponentPropsWithoutRef, useEffect, useState } from "react";
-import ReactMarkdown from 'react-markdown';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { dark } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { useEffect, useState } from "react";
 
 type props = {
   client: Client | null
@@ -57,7 +55,7 @@ export default function AIMessage({ client, thread, assistant, userInput }: prop
         assistant!["assistant_id"],
         {
           "input": { messages: [{ "role": "user", "content": userInput }] },
-          "streamMode": ["events", "updates", "messages"]
+          "streamMode": ["events", "updates"] //"messages"]
         }
       );
       let llmResponse = "";
@@ -121,33 +119,7 @@ export default function AIMessage({ client, thread, assistant, userInput }: prop
       <div className="flex flex-col gap-1">
         <div className="text-purple-300"> {tools} </div>
         <div className="text-green-600">{nodes.join('->')}</div>
-        <ReactMarkdown
-          components={{
-            code({inline, className, children, ...props}: {
-              inline?: boolean;
-              className?: string;
-              children: React.ReactNode;
-            } & ComponentPropsWithoutRef<'code'>) {
-              const match = /language-(\w+)/.exec(className || '')
-              return !inline && match ? (
-                <SyntaxHighlighter
-                  {...props}
-                  style={dark}
-                  language={match[1]}
-                  PreTag="div"
-                >
-                  {String(children).replace(/\n$/, '')}
-                </SyntaxHighlighter>
-              ) : (
-                <code {...props} className={className}>
-                  {children}
-                </code>
-              )
-            }
-          }}
-        >
-          {text}
-        </ReactMarkdown>
+        <MarkdownWidget text = {text}/>
       </div>
     </div>
   </>)
