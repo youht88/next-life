@@ -90,3 +90,27 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+
+.code-block-container {
+  position: relative;
+}
+
+.copy-button {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  padding: 5px 10px;
+  background-color: #eee;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.copy-button:hover {
+  background-color: #ddd;
+}
+
+.copy-button.copied {
+  background-color: #c8e6c9; /* 绿色表示已复制 */
+}

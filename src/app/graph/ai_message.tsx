@@ -1,5 +1,6 @@
 'use client'
-import { MarkdownWidget } from '@/components/alt/markdown';
+import { MyMarkdownWidget } from '@/components/alt/code_markdown';
+//import { MarkdownWidget } from '@/components/alt/markdown';
 import { Assistant, Client, Thread } from '@langchain/langgraph-sdk';
 import { useEffect, useState } from "react";
 
@@ -115,11 +116,11 @@ export default function AIMessage({ client, thread, assistant, userInput }: prop
     }
   }
   return (<>
-    <div className="p-1 bg-green-100 text-orange-400">
+    <div className="rounded-sm px-2 py-1 bg-gray-100 text-orange-400">
       <div className="flex flex-col gap-1">
         <div className="text-purple-300"> {tools} </div>
         <div className="text-green-600">{nodes.join('->')}</div>
-        <MarkdownWidget text = {text}/>
+        <MyMarkdownWidget text = {text}/>
       </div>
     </div>
   </>)
