@@ -1,9 +1,9 @@
 // middleware.js
 
-import { NextResponse } from 'next/server';
+import { NextRequest,NextResponse } from 'next/server';
 
-export function middleware(request: Request) {
-    console.log("MIDDLEWARE!!!!")
+export function middleware(request: NextRequest) {
+    console.log("MIDDLEWARE!!!!",request)
     const response = NextResponse.next();
 
     // 设置 CORS 头
@@ -21,5 +21,5 @@ export function middleware(request: Request) {
 
 // 可选：匹配所有请求
 export const config = {
-    matcher: ['*'], // 根据需要调整匹配器
+    matcher: ['/','/api/:path*'], // 根据需要调整匹配器
 };
