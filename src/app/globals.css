@@ -100,7 +100,7 @@ body {
   position: absolute;
   top: 5px;
   right: 5px;
-  padding: 5px 10px;
+  padding: 5px 5px;
   background-color: #eee;
   border: none;
   border-radius: 3px;
@@ -112,5 +112,5 @@ body {
 }
 
 .copy-button.copied {
-  background-color: #c8e6c9; /* 绿色表示已复制 */
+  color: green; /* 绿色表示已复制 */
 }

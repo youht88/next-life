@@ -1,8 +1,10 @@
+import { CheckCheck, Copy } from 'lucide-react';
 import React, { useState } from 'react';
 import { CopyToClipboard } from 'react-copy-to-clipboard';
 import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { dark } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
+
 
 interface CodeBlockProps extends React.ComponentProps<'code'> {
   inline?: boolean;
@@ -28,16 +30,17 @@ const CodeBlock: React.FC<CodeBlockProps> = ({
     <div className="code-block-container">
       <SyntaxHighlighter
         {...props}
-        style={dark}
+        style={oneDark}
+        showLineNumbers={true}
         language={match[1]}
         PreTag="div"
       >
         {String(children).replace(/\n$/, '')}
       </SyntaxHighlighter>
       <CopyToClipboard text={String(children)} onCopy={handleCopy}>
-        <button className={`copy-button ${isCopied ? 'copied' : ''}`}>
-          {isCopied ? 'Copied!' : 'Copy'}
-        </button>
+        <div className={`copy-button ${isCopied ? 'copied' : ''}`}>
+          {isCopied ? <CheckCheck size={16}/> : <Copy size={16}/>}
+        </div>
       </CopyToClipboard>
     </div>
   ) : (
@@ -47,7 +50,7 @@ const CodeBlock: React.FC<CodeBlockProps> = ({
   );
 };
 
-export const MyMarkdownWidget = ({ text }: { text: string }) => {
+export const CodeMarkdownWidget = ({ text }: { text: string }) => {
     return (
       <ReactMarkdown components={{ code: CodeBlock }}>{text}</ReactMarkdown>
     );

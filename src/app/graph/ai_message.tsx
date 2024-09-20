@@ -1,38 +1,29 @@
 'use client'
-import { MyMarkdownWidget } from '@/components/alt/code_markdown';
+import { CodeMarkdownWidget } from '@/components/alt/code_markdown';
 //import { MarkdownWidget } from '@/components/alt/markdown';
-import { Assistant, Client, Thread } from '@langchain/langgraph-sdk';
 import { useEffect, useState } from "react";
+import { Message } from './interface';
 
-type props = {
-  client: Client | null
-  assistant: Assistant | null
-  thread: Thread | null
-  userInput: string
-}
 type ResponseMetadata = {
   finish_reason?: string
 }
 
-export default function AIMessage({ client, thread, assistant, userInput }: props) {
-  const [text, setText] = useState<string>("")
-  const [lastInput, setLastInput] = useState<string>("")
+export default function AIMessage({ client, thread, assistant, text }: Message) {
+  const [resText, setResText] = useState<string>("")
   const [nodes, setNodes] = useState<string[]>([])
-  const [tools,setTools] = useState<string>("")
+  const [tools, setTools] = useState<string>("")
   let effect = false
   useEffect(() => {
-    setText("....")
-    console.log("userInput:", userInput, "lastInput:", lastInput, "effect", effect)
-    if (userInput == lastInput || effect) return;
+    if (effect) return;
     effect = true
-    getAIResponse(userInput)
+    getAIResponse(text)
     //test1(userInput)
   }, [])
   const test1 = async (userInput: string) => {
     let idx = 0
     let timer: NodeJS.Timeout
     timer = setInterval(() => {
-      setText(userInput.substring(0, idx))
+      setResText(userInput.substring(0, idx))
       idx++
       if (idx > userInput.length) clearInterval(timer)
     }, 50)
@@ -49,16 +40,28 @@ export default function AIMessage({ client, thread, assistant, userInput }: prop
     return "No tool calls";
   }
   const getAIResponse = async (userInput: string) => {
-    let aimsg = ""
+    console.log("client:",client,"assistant:",assistant,"thread:",thread)
     if (client) {
-      const streamResponse = client.runs.stream(
-        thread!["thread_id"],
-        assistant!["assistant_id"],
-        {
-          "input": { messages: [{ "role": "user", "content": userInput }] },
-          "streamMode": ["events", "updates"] //"messages"]
-        }
-      );
+      let streamResponse
+      if (thread) {
+        streamResponse = client.runs.stream(
+         thread!["thread_id"],
+          assistant!["assistant_id"],
+          {
+            "input": { messages: [{ "role": "user", "content": userInput }] },
+            "streamMode": ["events", "updates"] //"messages"]
+          }
+        );
+      } else {
+        streamResponse = client.runs.stream(
+          null,
+          assistant!["assistant_id"],
+          {
+            "input": { messages: [{ "role": "user", "content": userInput }] },
+            "streamMode": ["events", "updates"] //"messages"]
+          }
+        );
+      }
       let llmResponse = "";
       for await (const chunk of streamResponse) {
         console.log(chunk);
@@ -66,14 +69,14 @@ export default function AIMessage({ client, thread, assistant, userInput }: prop
           setNodes((prev) => [...prev, Object.keys(chunk.data)[0]])
         }
         if (chunk.event === "messages/partial") {
-          chunk.data.forEach((dataItem: { role: string; content: string; tool_calls: never[]; invalid_tool_calls: never[]; response_metadata: {}; })  => {
+          chunk.data.forEach((dataItem: { role: string; content: string; tool_calls: never[]; invalid_tool_calls: never[]; response_metadata: {}; }) => {
             if (dataItem.role && dataItem.role === "user") {
               console.log(`Human: ${dataItem.content}`);
             } else {
               const toolCalls = dataItem.tool_calls || [];
               const invalidToolCalls = dataItem.invalid_tool_calls || [];
               const content = dataItem.content || "";
-              const responseMetadata:ResponseMetadata = dataItem.response_metadata || {};
+              const responseMetadata: ResponseMetadata = dataItem.response_metadata || {};
 
               if (content) {
                 console.log(`AI: ${content}`);
@@ -100,7 +103,7 @@ export default function AIMessage({ client, thread, assistant, userInput }: prop
         if (chunk.event === "events" && chunk.data.event === "on_chat_model_stream"
           && chunk.data.data.chunk.content.length > 0) {
           llmResponse += chunk.data.data.chunk.content;
-          setText(llmResponse)
+          setResText(llmResponse)
         }
         // if (chunk.data && chunk.event !== "metadata") {
         //   const messages = chunk.data["messages"]
@@ -120,7 +123,7 @@ export default function AIMessage({ client, thread, assistant, userInput }: prop
       <div className="flex flex-col gap-1">
         <div className="text-purple-300"> {tools} </div>
         <div className="text-green-600">{nodes.join('->')}</div>
-        <MyMarkdownWidget text = {text}/>
+        <CodeMarkdownWidget text={resText} />
       </div>
     </div>
   </>)
