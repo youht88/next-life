@@ -53,7 +53,7 @@ export default function App() {
             type: MarkerType.ArrowClosed,
         },
         style: {
-            strokeWidth: 1,
+            strokeWidth: 3,
             color: "green"
         },
     };
@@ -75,7 +75,8 @@ export default function App() {
                     onConnect={onConnect}
                     nodeTypes={nodeTypes}
                     edgeTypes={edgeTypes}
-                ><Panel position="top-left">top-left</Panel>
+                >
+                    <Panel position="top-left">top-left</Panel>
                     <Panel position="top-center">top-center</Panel>
                     <Panel position="top-right">top-right</Panel>
                     <Panel position="bottom-left">bottom-left</Panel>
