@@ -1,9 +1,14 @@
 // middleware.js
 
-import { NextResponse } from 'next/server';
+import { type NextRequest, NextResponse } from 'next/server';
 
-export function middleware(request: Request) {
+export function middleware(request: NextRequest) {
     console.log("MIDDLEWARE!!!!")
+    // 设置 CORS 头
+    request.headers.set('Access-Control-Allow-Origin', '*'); // 允许所有来源
+    request.headers.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS'); // 允许的方法
+    request.headers.set('Access-Control-Allow-Headers', 'Content-Type');
+
     const response = NextResponse.next();
 
     // 设置 CORS 头
@@ -21,5 +26,5 @@ export function middleware(request: Request) {
 
 // 可选：匹配所有请求
 export const config = {
-    matcher: ['*'], // 根据需要调整匹配器
+    matcher: ['/graph/:path*'], // 根据需要调整匹配器
 };

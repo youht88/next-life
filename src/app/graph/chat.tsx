@@ -1,6 +1,6 @@
 'use client'
 // components/Chat.tsx
-import { StringLib } from '@/lib/data_utils';
+import { StringLib } from '@/lib/data';
 import { Assistant, Client, Cron, Thread } from '@langchain/langgraph-sdk';
 import { Send } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
@@ -17,11 +17,16 @@ type graphCloudProps = {
 }
 
 export default function Chat({ client, thread, assistant }: graphCloudProps) {
-  const [theme, setTheme] = useState('dark')
+  const [theme,setTheme] = useState<string>("light")
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState<string>('');
   const inputRef = useRef<HTMLInputElement | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(()=>{
+    const _theme = localStorage.getItem("theme") ?? 'light'
+    setTheme(_theme)
+  },[theme])
 
   const handleSend = async () => {
     if (!input.trim()) return;
@@ -44,6 +49,10 @@ export default function Chat({ client, thread, assistant }: graphCloudProps) {
       inputRef.current.focus();
     }
   };
+  const addMessage = async (msg: {text:string, sender:'system'|'ai'|'user'}) =>{
+      console.log("call back:",msg.text,msg.sender)
+      setMessages((prev)=>[...prev,msg])
+  }
   const handleSystemMessage = async (input: string) => {
     const inputs = input.trim().split(" ").filter(item => item)
     const method = inputs.shift()
@@ -58,17 +67,22 @@ export default function Chat({ client, thread, assistant }: graphCloudProps) {
         const schedule_list = true_input.split(" ")
         const msg = schedule_list.splice(5).join(" ")
         const schedule = schedule_list.join(" ")
-        const schedule_description = StringLib.translateCron(schedule)
-        console.log("???? cron schedule:", schedule, '|', msg)
-        const cron_job: Cron = await client!.crons.create(
-          assistant!["assistant_id"],
-          {
-            schedule,
-            input: { "messages": [{ "role": "user", "content": msg }] }
-          },
-        )
-        const cron_msg: Message = { text: `${schedule_description}\n任务ID=${cron_job.cron_id},为避免浪费资源,请及时删除该任务`, sender: 'system' };
-        setMessages((prev) => [...prev, cron_msg]);
+        try{
+          const schedule_description = StringLib.translateCron(schedule)
+          console.log("???? cron schedule:", schedule, '|', msg,'|',schedule_description)
+          const cron_job: Cron = await client!.crons.create(
+            assistant!["assistant_id"],
+            {
+              schedule,
+              input: { "messages": [{ "role": "user", "content": msg }] }
+            },
+          )
+          const cron_msg: Message = { text: `${schedule_description}\n任务ID=${cron_job.cron_id},为避免浪费资源,请及时删除该任务`, sender: 'system' };
+          setMessages((prev) => [...prev, cron_msg]);
+        }catch(e){
+          const cron_msg: Message = { text: `${e}`, sender: 'system' };
+          setMessages((prev) => [...prev, cron_msg]);                 
+        }
         break;
       case '/drop':
         const run_id = true_input
@@ -97,7 +111,7 @@ export default function Chat({ client, thread, assistant }: graphCloudProps) {
           \n 1. **/help** 显示指令说明\
           \n 2. **/cron <cron> <msg>** 定时执行msg,例如:每小时执行一次 /cron 0 * * * * 3+2=？\
           \n 4. **/once <msg>** 一次性执行\
-          \n 5. **/drop <run_id>** 删除已经定义任务"
+          \n 5. **/drop <run_id>** 删除定时任务"
         const systemMessage: Message = { text: help_text, sender: 'system' }
         setMessages((prev) => [...prev, systemMessage]);
     }
@@ -118,11 +132,12 @@ export default function Chat({ client, thread, assistant }: graphCloudProps) {
   }, [messages]); // 监听 messages 的变化
 
   useEffect(() => {
-    console.log("chat theme:", localStorage.getItem("theme"))
-  }, []);
+    document.documentElement.classList.toggle('dark', theme === 'dark');
+  }, [theme]);
 
+  
   return (
-    <div className="flex justify-center items-center w-full h-full">
+    <div className="inset-0 flex justify-center items-center w-full h-full dark:bg-black">
       <div className="flex flex-col w-full h-full p-4">
         <div className="flex-1 overflow-y-auto mb-4">
           {messages.map((msg, index) => (
@@ -133,7 +148,8 @@ export default function Chat({ client, thread, assistant }: graphCloudProps) {
                     case 'user':
                       return <UserMessage {...msg}></UserMessage>
                     case 'ai':
-                      return <AIMessage {...msg} />
+                      const props = {...msg,addMessage}
+                      return <AIMessage {...props} />
                     default:
                       return <SystemMessage {...msg}></SystemMessage>
                   }
@@ -146,7 +162,7 @@ export default function Chat({ client, thread, assistant }: graphCloudProps) {
         <div className="flex">
           <input
             type="text"
-            className="flex-1 p-2 border rounded-l-lg dark:text-white text-sm"
+            className="flex-1 p-2 border rounded-l-lg dark:text-white dark:bg-black text-sm"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="输入消息..."
@@ -155,7 +171,7 @@ export default function Chat({ client, thread, assistant }: graphCloudProps) {
           />
           <button
             onClick={handleSend}
-            className="p-2 bg-blue-500 text-white rounded-r-lg dark:text-black"
+            className="p-2 bg-blue-500 text-white rounded-r-lg dark:text-white"
           >
             <Send className="w-5 h-5" />
           </button>

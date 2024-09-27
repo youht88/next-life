@@ -1,14 +1,15 @@
 'use client'
 import { CodeMarkdownWidget } from '@/components/alt/code_markdown';
 //import { MarkdownWidget } from '@/components/alt/markdown';
-import { useEffect, useState } from "react";
-import { Message } from './interface';
+import { BaseMessage } from '@langchain/core/messages';
+import { Suspense, useEffect, useState } from "react";
 
 type ResponseMetadata = {
   finish_reason?: string
 }
 
-export default function AIMessage({ client, thread, assistant, text }: Message) {
+export default function AIMessage({...props}) {
+  const {client, thread, assistant, text,addMessage} = props 
   const [resText, setResText] = useState<string>("")
   const [nodes, setNodes] = useState<string[]>([])
   const [tools, setTools] = useState<string>("")
@@ -40,18 +41,44 @@ export default function AIMessage({ client, thread, assistant, text }: Message) 
     return "No tool calls";
   }
   const getAIResponse = async (userInput: string) => {
-    console.log("client:",client,"assistant:",assistant,"thread:",thread)
+    console.log("client:", client, "assistant:", assistant, "thread:", thread)
     if (client) {
       let streamResponse
       if (thread) {
-        streamResponse = client.runs.stream(
-         thread!["thread_id"],
-          assistant!["assistant_id"],
-          {
-            "input": { messages: [{ "role": "user", "content": userInput }] },
-            "streamMode": ["events", "updates"] //"messages"]
-          }
-        );
+        //判断是否来自用户的回答
+        const state = await client.threads.getState(thread["thread_id"]);
+        let userMessage = { "role": "user", "content": userInput }
+        console.log("!!!!", state)
+        if (state.next.length>0 && !state.tasks[0].error) {
+          await client.threads.updateState(
+            thread.thread_id,  // Thread ID
+            {
+              values: { "messages": [userMessage] },  // Updated message
+              asNode: state.next[0]
+            }  // Acting as human_review_node
+          );
+          streamResponse = client.runs.stream(
+            thread!["thread_id"],
+            assistant!["assistant_id"],
+            {
+              "input": null,
+              "streamMode": ["events", "updates","messages"],
+              //"streamMode": ["updates","events"],
+              "interruptBefore": ["nodeA"]
+            }
+          );
+        } else {
+          streamResponse = client.runs.stream(
+            thread!["thread_id"],
+            assistant!["assistant_id"],
+            {
+              "input": { messages: [{ "role": "user", "content": userInput }] },
+              "streamMode": ["events", "updates","messages"],
+              //"streamMode": ["updates","events"],
+              "interruptBefore": ["nodeA"]
+            }
+          );
+        }
       } else {
         streamResponse = client.runs.stream(
           null,
@@ -65,6 +92,9 @@ export default function AIMessage({ client, thread, assistant, text }: Message) 
       let llmResponse = "";
       for await (const chunk of streamResponse) {
         console.log(chunk);
+        if (chunk.event === "error"){
+          await addMessage({text:`${chunk.data.error}|${chunk.data.message}`,sender:"system"})
+        }
         if (chunk.event === "updates") {
           setNodes((prev) => [...prev, Object.keys(chunk.data)[0]])
         }
@@ -116,15 +146,32 @@ export default function AIMessage({ client, thread, assistant, text }: Message) 
         //   }
         // }
       }
+      //检查是否interrupt
+      if (thread) {
+        const state = await client.threads.getState(thread["thread_id"]);
+        console.log("is interrupt?", state.next,state)
+        if (state.next.length>0) {
+          const lastMessageContent = (state.values as { messages: BaseMessage[] }).messages.slice(-1)[0].content
+          setResText(lastMessageContent as string)
+        }
+        console.log("HERE!!!!!!")
+        await addMessage({text:"hello1",sender:"system"})
+        await addMessage({text:"hello2",sender:"user"})
+        await addMessage({text:"hello3",sender:"ai"})
+      }
+    }else{
+      setResText(userInput)
     }
   }
   return (<>
-    <div className="rounded-sm px-2 py-1 bg-gray-100 text-orange-400">
+    <Suspense fallback={<div className="w-10 h-10 bg-yellow-600"></div>} >
+    <div className="rounded-sm px-2 py-1 text-orange-400">
       <div className="flex flex-col gap-1">
         <div className="text-purple-300"> {tools} </div>
         <div className="text-green-600">{nodes.join('->')}</div>
         <CodeMarkdownWidget text={resText} />
       </div>
     </div>
+    </Suspense>
   </>)
 }

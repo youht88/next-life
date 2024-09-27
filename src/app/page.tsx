@@ -1,33 +1,20 @@
 'use client'
-import { useEffect, useState } from 'react';
+import ThemeToggle from '@/components/alt/theme_toggle';
 
-function ThemeToggle() {
-  const [theme, setTheme] = useState('dark');
-
-  useEffect(() => {
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme) {
-      setTheme(savedTheme);
-    }
-  }, []);
-
-  useEffect(() => {
-    document.documentElement.classList.toggle('dark', theme === 'dark');
-    localStorage.setItem('theme', theme);
-  }, [theme]);
-
-  const toggleTheme = () => {
-    setTheme((prevTheme) => (prevTheme === 'light' ? 'dark' : 'light'));
-  };
-
-  return (
-    <button onClick={toggleTheme} className="p-2 bg-gray-200 dark:bg-gray-800">
-      Toggle Theme
-    </button>
-  );
-}
+import { JSONTree } from 'react-json-tree';
 
 export default function App() {
+  const jsonData={
+    "name":"youht",
+    "age": 20,
+    "class": [ {
+        "name":"A",
+        "score":23.22
+    },{
+        "name":"b",
+        "score":60.42
+    }]
+  }
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900 transition-colors duration-300">
       <header className="p-4">
@@ -39,6 +26,9 @@ export default function App() {
           这是一个使用 shadcn 和 Tailwind CSS 的主题切换示例。
         </p>
       </main>
+      <div className="absolute top-10 right-10 bg-slate-200 p-2.5 }">
+          <JSONTree data={jsonData} invertTheme={true}></JSONTree>
+      </div>
     </div>
   );
 }

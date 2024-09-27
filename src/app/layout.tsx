@@ -1,5 +1,7 @@
+import { Aperture, Frame, House, MessageSquareText, Workflow } from 'lucide-react';
 import type { Metadata } from "next";
 import localFont from "next/font/local";
+import Link from 'next/link';
 import "./globals.css";
 
 const geistSans = localFont({
@@ -27,9 +29,17 @@ export default function RootLayout({
     <html lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        <div className="min-h-screen bg-white dark:bg-gray-900 transition-colors duration-300">
-        {children}
+      > <div className="flex flex-row  bg-white text-black dark:bg-gray-900 dark:text-white">
+          <div className="flex flex-col py-10 px-2 gap-8  items-center border border-r-gray-400"> 
+            <Link href="/" className="flex flex-col items-center"><House/>Home</Link>
+            <Link href="/graph?agent=test" className="flex flex-col items-center"><Workflow/>test</Link>
+            <Link href="/graph?agent=life" className="flex flex-col items-center"><MessageSquareText/>life</Link> 
+            <Link href="/graph?agent=graph2" className="flex flex-col items-center"><Frame/>graph2</Link> 
+            <Link href="/flow" className="flex flex-col items-center"><Aperture/>flow</Link> 
+          </div>
+          <div className="flex-grow min-h-screen transition-colors duration-300">
+            {children}
+          </div>
         </div>
       </body>
     </html>

@@ -9,11 +9,15 @@ function ThemeToggle() {
   }, [theme]);
 
   const toggleTheme = () => {
-    setTheme((prevTheme) => (prevTheme === 'light' ? 'dark' : 'light'));
+    setTheme((prevTheme) => {
+      const newTheme = prevTheme === 'light' ? 'dark' : 'light';
+      localStorage.setItem("theme",newTheme)
+      return newTheme;
+    });
   };
 
   return (
-    <button onClick={toggleTheme} className="p-2 bg-gray-200 dark:bg-gray-800">
+    <button onClick={toggleTheme} className="p-2 bg-gray-200 text-black dark:bg-gray-800 dark:text-white">
       Toggle Theme
     </button>
   );

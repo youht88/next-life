@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 
 const _langgraph_cloud_uri = "http://192.168.23.57:8123"; // 从环境变量中获取
+//const _langgraph_cloud_uri = "http://localhost:8123"; // 从环境变量中获取
 
 export function useConfig() {
     const [langgraph_cloud_uri, setLanggraphCloudUri] = useState<string>(_langgraph_cloud_uri);
