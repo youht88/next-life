@@ -1,22 +1,16 @@
 'use client'
 // components/Chat.tsx
 import { StringLib } from '@/lib/data';
-import { Assistant, Client, Cron, Thread } from '@langchain/langgraph-sdk';
+import { Cron } from '@langchain/langgraph-sdk';
 import { Send } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import AIMessage from './ai_message';
-import { Message } from './interface';
+import { GraphProps, Message } from './interface';
 import SystemMessage from './system_message';
 import UserMessage from './user_message';
 
 
-type graphCloudProps = {
-  client: Client | null | undefined
-  assistant: Assistant | null | undefined
-  thread: Thread | null | undefined
-}
-
-export default function Chat({ client, thread, assistant }: graphCloudProps) {
+export default function Chat( graphClient: GraphProps) {
   const [theme,setTheme] = useState<string>("light")
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState<string>('');
@@ -41,7 +35,7 @@ export default function Chat({ client, thread, assistant }: graphCloudProps) {
     if (userInput.startsWith('/')) {
       handleSystemMessage(input)
     } else {
-      const aiMessage: Message = { text: userInput, client, assistant, thread, sender: 'ai' };
+      const aiMessage: Message = { text: userInput, graphClient: graphClient, sender: 'ai' };
       setMessages((prev) => [...prev, aiMessage]);
     }
     // 将焦点重新设置到输入框
@@ -54,13 +48,14 @@ export default function Chat({ client, thread, assistant }: graphCloudProps) {
       setMessages((prev)=>[...prev,msg])
   }
   const handleSystemMessage = async (input: string) => {
+    const {client,thread,assistant} = graphClient;
     const inputs = input.trim().split(" ").filter(item => item)
     const method = inputs.shift()
     const true_input = inputs.join(" ")
     switch (method) {
       case '/once':
         const once_msg1: Message = { text: "单次执行,不记录到对话", once: true, sender: 'system' }
-        const once_msg2: Message = { text: true_input, once: true, sender: 'ai', client, assistant }
+        const once_msg2: Message = { text: true_input, once: true, sender: 'ai', graphClient }
         setMessages((prev) => [...prev, once_msg1, once_msg2]);
         break;
       case '/cron':
@@ -91,7 +86,7 @@ export default function Chat({ client, thread, assistant }: graphCloudProps) {
         break;
       case '/list':
         const res = await client!.crons.search();
-        const res_sample = res.map((item) => {
+        const res_sample = res.map((item:any) => {
           return {
             id: item.cron_id,
             schedule: item.schedule,

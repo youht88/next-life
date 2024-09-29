@@ -34,7 +34,7 @@ export default function RootLayout({
             <Link href="/" className="flex flex-col items-center"><House/>Home</Link>
             <Link href="/graph?agent=test" className="flex flex-col items-center"><Workflow/>test</Link>
             <Link href="/graph?agent=life" className="flex flex-col items-center"><MessageSquareText/>life</Link> 
-            <Link href="/graph?agent=graph2" className="flex flex-col items-center"><Frame/>graph2</Link> 
+            <Link href="/graph?agent=test_graph" className="flex flex-col items-center"><Frame/>test graph</Link> 
             <Link href="/flow" className="flex flex-col items-center"><Aperture/>flow</Link> 
           </div>
           <div className="flex-grow min-h-screen transition-colors duration-300">

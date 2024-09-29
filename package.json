@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@langchain/core": "^0.3.3",
     "@langchain/langgraph-sdk": "^0.0.10",
     "@xyflow/react": "^12.3.0",
     "class-variance-authority": "^0.7.0",
