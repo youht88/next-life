@@ -9,12 +9,18 @@ import { GraphProps } from './interface';
 type ResponseMetadata = {
   finish_reason?: string
 }
-
+type WebRefs = {
+  title: string
+  url: string
+}
 export default function AIMessage({ ...props }) {
   const { graphClient, text, addMessage } = props
   const [resText, setResText] = useState<string>("")
   const [nodes, setNodes] = useState<string[]>([])
-  const [tools, setTools] = useState<string>("")
+  const [tools, setTools] = useState<string[]>([])
+  const [webRefs, setWebRefs] = useState<WebRefs[]>([])
+  const [ragRefs, setRagRefs] = useState([])
+  const [replRefs, setReplRefs] = useState("")
   let effect = false
   useEffect(() => {
     if (effect) return;
@@ -41,11 +47,9 @@ export default function AIMessage({ ...props }) {
       const formattedCalls = toolCalls.map((call: { id: any; name: any; args: any; }) => {
         return `Tool Call ID: ${call.id}, Function: ${call.name}, Arguments: ${JSON.stringify(call.args)}`;
       });
-      setTools(formattedCalls.join("\n"));
+      setTools((prev) => [...prev, ...formattedCalls]);
       return formattedCalls.join("\n");
     }
-    setTools("No tool calls")
-    return "No tool calls";
   }
   const getAIResponse_langserve = async (userInput: string, graphClient: GraphProps) => {
     const { client } = graphClient;
@@ -65,16 +69,35 @@ export default function AIMessage({ ...props }) {
             setResText(llmResponse)
           } else if ((event.event == "on_chain_start" || event.event == "on_chain_end")) {
             const name = event.name
-            if (!name.startsWith('/') && !name.startsWith('_') )
-            if (event.event=="on_chain_start"){
-              setNodes((prev) => [...prev, 'S:'+name])
-            }else{
-              setNodes((prev) => [...prev, 'E:'+name])
+            if (!name.startsWith('/') && !name.startsWith('_'))
+              if (event.event == "on_chain_start") {
+                setNodes((prev) => [...prev, 'S:' + name])
+              } else {
+                setNodes((prev) => [...prev, 'E:' + name])
+              }
+          } else if (event.event == "on_tool_start") {
+            const name = event.name
+            const args = JSON.stringify(event.data.input)
+            const toolStr = `${name}(${args})`
+            setTools((prev) => [...prev, toolStr])
+          } else if (event.event == "on_tool_end") {
+            if (event.name == "duckduckgo_results_json") {
+              const content = event.data.output.content
+              console.log(content)
+              const newRefs = extractTitlesAndLinks(content)
+              setWebRefs((prev) => [...prev, ...newRefs])
+            } else if (event.name == "tavily_search_results_json") {
+              const output = event.data.output as Array<any>
+              const newRefs = output.map((item:any)=>{return {"title":item.url,"url":item.url}})
+              setWebRefs((prev)=>[...prev,...newRefs])
+            } else if (event.name == "python_repl") {
+              const codeStr = "```\n"
+              const command = codeStr + event.data.input.command
+              setReplRefs(command)
+            } else {
+              console.log(event)
             }
-          } else if (event.event == "on_tool_start"){
-              const name = event.name
-              setTools(name)
-          }else {
+          } else {
             console.log(event)
           }
         }
@@ -207,13 +230,59 @@ export default function AIMessage({ ...props }) {
       setResText(userInput)
     }
   }
+  function extractTitlesAndLinks(text: string): WebRefs[] {
+    // 使用正则表达式匹配 title 和 link
+    const pattern = /title:\s*(.*?),\s*link:\s*(https?:\/\/[^\s,]+)/g;
+    const result: Array<{ title: string; url: string }> = [];
+    let match: RegExpExecArray | null;
+
+    // 使用 exec 方法来查找匹配项
+    while ((match = pattern.exec(text)) !== null) {
+      const title = match[1].trim();
+      const url = match[2].trim();
+      result.push({ title, url });
+    }
+
+    // 返回 JSON 格式的字符串
+    return result
+  }
   return (<>
     <Suspense fallback={<div className="w-10 h-10 bg-yellow-600"></div>} >
       <div className="rounded-sm px-2 py-1 text-orange-400">
         <div className="flex flex-col gap-1">
-          <div className="text-purple-300"> {tools} </div>
+          <div className="text-purple-300">
+            <ul>
+              {tools.map((item, idx) => <li> {item} </li>)}
+            </ul>
+          </div>
           <div className="text-green-600">{nodes.join('->')}</div>
           <CodeMarkdownWidget text={resText} />
+          {webRefs.length > 0 ?
+            <div className="flex flex-col">
+              <div className="flex items-center">
+                <hr className="flex-grow border-t border-gray-300" />
+                <span className="mx-2 text-gray-500">以下为参考信息</span>
+                <hr className="flex-grow border-t border-gray-300" />
+              </div>
+              <div className="text-blue-600">
+                <ul>
+                  {webRefs.map((item, idx) => <li>[{idx + 1}] <a href={item.url}>{item.title}</a></li>)}
+                </ul>
+              </div>
+            </div>
+            : <></>}
+          {replRefs != "" ?
+            <div className="flex flex-col">
+              <div className="flex items-center">
+                <hr className="flex-grow border-t border-gray-300" />
+                <span className="mx-2 text-gray-500">以下为脚本代码</span>
+                <hr className="flex-grow border-t border-gray-300" />
+              </div>
+              <div className="text-blue-600">
+                <CodeMarkdownWidget text={replRefs} />
+              </div>
+            </div>
+            : <></>}
         </div>
       </div>
     </Suspense>
