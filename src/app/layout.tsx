@@ -32,7 +32,7 @@ export default function RootLayout({
       > <div className="flex flex-row  bg-white text-black dark:bg-gray-900 dark:text-white">
           <div className="flex flex-col py-10 px-2 gap-8  items-center border border-r-gray-400"> 
             <Link href="/" className="flex flex-col items-center"><House/>Home</Link>
-            <Link href="/graph?agent=test" className="flex flex-col items-center"><Workflow/>test</Link>
+            <Link href="/graph?agent=stock_graph" className="flex flex-col items-center"><Workflow/>stock</Link>
             <Link href="/graph?agent=life" className="flex flex-col items-center"><MessageSquareText/>life</Link> 
             <Link href="/graph?agent=test_graph" className="flex flex-col items-center"><Frame/>test graph</Link> 
             <Link href="/flow" className="flex flex-col items-center"><Aperture/>flow</Link> 
