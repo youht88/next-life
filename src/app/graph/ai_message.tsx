@@ -3,8 +3,11 @@ import { CodeMarkdownWidget } from '@/components/alt/code_markdown';
 //import { MarkdownWidget } from '@/components/alt/markdown';
 import { BaseMessage, HumanMessage } from '@langchain/core/messages';
 import { Client } from '@langchain/langgraph-sdk';
+import { Collapse, CollapseProps, Divider, Typography } from 'antd';
 import { Suspense, useEffect, useState } from "react";
 import { GraphProps } from './interface';
+
+const {Text,Paragraph} = Typography
 
 type ResponseMetadata = {
   finish_reason?: string
@@ -13,11 +16,16 @@ type WebRefs = {
   title: string
   url: string
 }
+type ToolCall = {
+  run_id: string
+  toolStr: string
+  result?: string
+}
 export default function AIMessage({ ...props }) {
   const { graphClient, text, addMessage } = props
   const [resText, setResText] = useState<string>("")
   const [nodes, setNodes] = useState<string[]>([])
-  const [tools, setTools] = useState<string[]>([])
+  const [tools, setTools] = useState<ToolCall[]>([])
   const [webRefs, setWebRefs] = useState<WebRefs[]>([])
   const [ragRefs, setRagRefs] = useState([])
   const [replRefs, setReplRefs] = useState("")
@@ -45,8 +53,10 @@ export default function AIMessage({ ...props }) {
   const formatToolCalls = (toolCalls: { id: any; name: any; args: any; }[]) => {
     if (toolCalls && toolCalls.length > 0) {
       const formattedCalls = toolCalls.map((call: { id: any; name: any; args: any; }) => {
-        return `Tool Call ID: ${call.id}, Function: ${call.name}, Arguments: ${JSON.stringify(call.args)}`;
-      });
+        return {
+        run_id: call.id,
+        toolStr:`Tool Call ID: ${call.id}, Function: ${call.name}, Arguments: ${JSON.stringify(call.args)}`
+      }});
       setTools((prev) => [...prev, ...formattedCalls]);
       return formattedCalls.join("\n");
     }
@@ -76,20 +86,28 @@ export default function AIMessage({ ...props }) {
                 setNodes((prev) => [...prev, 'E:' + name])
               }
           } else if (event.event == "on_tool_start") {
+            const run_id = event.run_id
             const name = event.name
             const args = JSON.stringify(event.data.input)
             const toolStr = `${name}(${args})`
-            setTools((prev) => [...prev, toolStr])
+            setTools((prev) => [...prev, {run_id,toolStr}])
           } else if (event.event == "on_tool_end") {
+            const run_id = event.run_id
+            const content = event.data.output.content
+            setTools((prev)=>prev.map((item)=>{
+              if (item.run_id == run_id){
+                item.result = content
+              }
+              return item
+            }))
             if (event.name == "duckduckgo_results_json") {
-              const content = event.data.output.content
               console.log(content)
               const newRefs = extractTitlesAndLinks(content)
               setWebRefs((prev) => [...prev, ...newRefs])
             } else if (event.name == "tavily_search_results_json") {
               const output = event.data.output as Array<any>
-              const newRefs = output.map((item:any)=>{return {"title":item.url,"url":item.url}})
-              setWebRefs((prev)=>[...prev,...newRefs])
+              const newRefs = output.map((item: any) => { return { "title": item.url, "url": item.url } })
+              setWebRefs((prev) => [...prev, ...newRefs])
             } else if (event.name == "python_repl") {
               const codeStr = "```\n"
               const command = codeStr + event.data.input.command
@@ -246,24 +264,36 @@ export default function AIMessage({ ...props }) {
     // 返回 JSON 格式的字符串
     return result
   }
+  const getToolItems = ():CollapseProps['items']=>{
+      const ellipsis = {rows:2, expandable: true, symbol: 'more'} 
+      const items = tools.map((item)=>{
+        return {
+          key:item.run_id,
+          label: <div className="text-blue-500"> {item.toolStr} </div>,
+          children: <Paragraph copyable ellipsis={ellipsis}> {item.result} </Paragraph>
+        } 
+      })
+      return items
+  }
   return (<>
     <Suspense fallback={<div className="w-10 h-10 bg-yellow-600"></div>} >
       <div className="rounded-sm px-2 py-1 text-orange-400">
         <div className="flex flex-col gap-1">
           <div className="text-purple-300">
-            <ul>
+            {
+              tools.length>0
+              ? <Collapse size={"small"} items={getToolItems()} /> 
+              : <></>
+            }
+            {/* <ul>
               {tools.map((item, idx) => <li> {item} </li>)}
-            </ul>
+            </ul> */}
           </div>
           <div className="text-green-600">{nodes.join('->')}</div>
           <CodeMarkdownWidget text={resText} />
           {webRefs.length > 0 ?
             <div className="flex flex-col">
-              <div className="flex items-center">
-                <hr className="flex-grow border-t border-gray-300" />
-                <span className="mx-2 text-gray-500">以下为参考信息</span>
-                <hr className="flex-grow border-t border-gray-300" />
-              </div>
+              <Divider variant='dashed'><div className="text-blue-300 text-xs">以下为参考信息</div></Divider>
               <div className="text-blue-600">
                 <ul>
                   {webRefs.map((item, idx) => <li>[{idx + 1}] <a href={item.url}>{item.title}</a></li>)}
@@ -273,11 +303,7 @@ export default function AIMessage({ ...props }) {
             : <></>}
           {replRefs != "" ?
             <div className="flex flex-col">
-              <div className="flex items-center">
-                <hr className="flex-grow border-t border-gray-300" />
-                <span className="mx-2 text-gray-500">以下为脚本代码</span>
-                <hr className="flex-grow border-t border-gray-300" />
-              </div>
+              <Divider variant="dashed"><div className="text-blue-300 text-xs">以下为脚本信息</div></Divider>
               <div className="text-blue-600">
                 <CodeMarkdownWidget text={replRefs} />
               </div>

@@ -2,6 +2,7 @@
 // components/Chat.tsx
 import { StringLib } from '@/lib/data';
 import { Cron } from '@langchain/langgraph-sdk';
+import { Flex, Input } from 'antd';
 import { Send } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import AIMessage from './ai_message';
@@ -154,7 +155,13 @@ export default function Chat( graphClient: GraphProps) {
           ))}
           <div ref={messagesEndRef} className="h-10" />
         </div>
-        <div className="flex">
+        <Flex ref={inputRef}>
+          <Input addonAfter={<Send onClick={handleSend}/>} value={input} 
+               onChange={(e) => setInput(e.target.value)} placeholder='输入消息...'
+               onKeyDown={handleKeyDown}
+          />
+        </Flex>
+        {/* <div className="flex">
           <input
             type="text"
             className="flex-1 p-2 border rounded-l-lg dark:text-white dark:bg-black text-sm"
@@ -170,7 +177,7 @@ export default function Chat( graphClient: GraphProps) {
           >
             <Send className="w-5 h-5" />
           </button>
-        </div>
+        </div> */}
       </div>
     </div>
   );

@@ -9,9 +9,11 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@ant-design/icons": "^5.5.1",
     "@langchain/core": "^0.3.3",
     "@langchain/langgraph-sdk": "^0.0.10",
     "@xyflow/react": "^12.3.0",
+    "antd": "^5.21.3",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "lucide-react": "^0.439.0",
