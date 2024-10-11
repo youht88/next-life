@@ -269,7 +269,7 @@ export default function AIMessage({ ...props }) {
       const items = tools.map((item)=>{
         return {
           key:item.run_id,
-          label: <div className="text-blue-500"> {item.toolStr} </div>,
+          label: <div className="text-blue-500"> {`${item.toolStr} - ${item.run_id}`} </div>,
           children: <Paragraph copyable ellipsis={ellipsis}> {item.result} </Paragraph>
         } 
       })
