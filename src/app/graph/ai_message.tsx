@@ -74,9 +74,13 @@ export default function AIMessage({ ...props }) {
 
         for await (const event of eventStream) {
           //console.log(event)
-          if (event.event === "on_chat_model_stream") {
+          if (event.event === "on_chat_model_start"){
+            llmResponse=""
+            setResText(llmResponse)
+          }else if (event.event === "on_chat_model_stream") {
             llmResponse += event.data.chunk.content;
             setResText(llmResponse)
+            //console.log(event)
           } else if ((event.event == "on_chain_start" || event.event == "on_chain_end")) {
             const name = event.name
             if (!name.startsWith('/') && !name.startsWith('_'))
