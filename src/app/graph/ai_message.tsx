@@ -68,7 +68,7 @@ export default function AIMessage({ ...props }) {
       try {
         let llmResponse = ""
         const eventStream = await client.streamEvents(
-          { messages: [new HumanMessage(userInput)] },
+          { messages: [new HumanMessage(userInput)],summary:"",mmwp:{} },
           { version: "v2" }
         );
 
