@@ -2,7 +2,7 @@ import React from 'react';
 import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { dark } from 'react-syntax-highlighter/dist/esm/styles/prism';
-
+import remarkGfm from 'remark-gfm';
 type Props = {
     inline?: boolean;
     className?: string;
@@ -39,8 +39,9 @@ export const MarkdownWidget:React.FC<MarkdownProps> = ({ text }: { text: string 
           );
         },
       }}
+      remarkPlugins={[remarkGfm]}
     >
-      {text}
+     {text}
     </ReactMarkdown>
   );
 };

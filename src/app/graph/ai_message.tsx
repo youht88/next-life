@@ -1,6 +1,5 @@
 'use client'
 import { CodeMarkdownWidget } from '@/components/alt/code_markdown';
-//import { MarkdownWidget } from '@/components/alt/markdown';
 import { BaseMessage, HumanMessage } from '@langchain/core/messages';
 import { Client } from '@langchain/langgraph-sdk';
 import { Collapse, CollapseProps, Divider, Typography } from 'antd';
@@ -67,10 +66,13 @@ export default function AIMessage({ ...props }) {
     if (client) {
       try {
         let llmResponse = ""
+        // const eventStream = await client.streamEvents(
+        //   { messages: [new HumanMessage(userInput)],summary:"",mmwp:{} },
+        //   { version: "v2" }
         const eventStream = await client.streamEvents(
-          { messages: [new HumanMessage(userInput)],summary:"",mmwp:{} },
+          { messages: [new HumanMessage(userInput)],error:"",modelData:{},summary:"" },
           { version: "v2" }
-        );
+      );
 
         for await (const event of eventStream) {
           //console.log(event)
@@ -279,6 +281,24 @@ export default function AIMessage({ ...props }) {
       })
       return items
   }
+  const markdownContent = `
+# Hello, Markdown!
+
+
+This is a **Markdown** document that includes a table and code block:
+
+| Name  | Age |
+|-------|-----|
+| Alice | 25  |
+| Bob   | 30  |
+
+\`\`\`javascript
+function greet(name) {
+  return 'Hello, ' + name + '!';
+}
+console.log(greet('Alice'));
+\`\`\`
+`
   return (<>
     <Suspense fallback={<div className="w-10 h-10 bg-yellow-600"></div>} >
       <div className="rounded-sm px-2 py-1 text-orange-400">
@@ -294,6 +314,7 @@ export default function AIMessage({ ...props }) {
             </ul> */}
           </div>
           <div className="text-green-600">{nodes.join('->')}</div>
+          {/* <CodeMarkdownWidget text = {markdownContent} /> */}
           <CodeMarkdownWidget text={resText} />
           {webRefs.length > 0 ?
             <div className="flex flex-col">
@@ -318,3 +339,4 @@ export default function AIMessage({ ...props }) {
     </Suspense>
   </>)
 }
+

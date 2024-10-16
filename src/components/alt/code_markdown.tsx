@@ -4,7 +4,7 @@ import { CopyToClipboard } from 'react-copy-to-clipboard';
 import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
-
+import remarkGfm from 'remark-gfm';
 
 interface CodeBlockProps extends React.ComponentProps<'code'> {
   inline?: boolean;
@@ -52,7 +52,7 @@ const CodeBlock: React.FC<CodeBlockProps> = ({
 
 export const CodeMarkdownWidget = ({ text }: { text: string }) => {
     return (
-      <ReactMarkdown components={{ code: CodeBlock }}>{text}</ReactMarkdown>
+      <ReactMarkdown components={{ code: CodeBlock }} remarkPlugins={[remarkGfm]}>{text}</ReactMarkdown>
     );
   };
   
